@@ -22,6 +22,17 @@ var globalObj = {
 }
 
 function handleImage(e){  
+    nameWithExt = e.target.files[0].name;
+    console.log("Image uploaded: " + nameWithExt);
+
+    name = nameWithExt.substr(0, nameWithExt.lastIndexOf('.'));
+
+    let extJpg = nameWithExt.substr(nameWithExt.lastIndexOf('.'));
+
+    if(extJpg != '.jpg' && extJpg != '.jpeg' && extJpg != '.JPG' && extJpg != '.JPEG'){
+        console.log("The image is not a .jpg/.jpeg format!");
+        return;
+    }
   EXIF.getData(e.target.files[0], function() {
     var allMetaData = EXIF.getAllTags(this);
   
@@ -38,7 +49,7 @@ function handleImage(e){
     if(isNaN(nc1) || nc1 == null){
         var nc2 = parseFloat(EXIF.getTag(this, "SamplesPerPixel"));
         if(isNaN(nc2) || nc2 == null){
-            openModal();
+            // openModal();
         }else{
             globalObj.nc = nc2;
         }
@@ -46,10 +57,6 @@ function handleImage(e){
         globalObj.nc = nc1;
     }
 
-    nameWithExt = e.target.files[0].name;
-
-    name = nameWithExt.substr(0, nameWithExt.lastIndexOf('.'));
-    
     reader.onload = function(event){
       var img = new Image();
       img.onload = function(){
@@ -71,15 +78,26 @@ function handleImage(e){
         var imgData = ctxHide.getImageData(0,0,hideCanvas.width, hideCanvas.height);
 
         let newArr = [];
+
+        let verifyColorSpace = detectColorSpace(imgData.data);
         
-        for(let j = 0; j < imgData.data.length; j+=4){
-            newArr.push(imgData.data[j])
-            newArr.push(imgData.data[j+1])
-            newArr.push(imgData.data[j+2])
+        if(verifyColorSpace == 1){
+            for(let j = 0; j < imgData.data.length; j+=4){
+                newArr.push(imgData.data[j]);
+            }
+        }else if(verifyColorSpace == 3){
+            for(let j = 0; j < imgData.data.length; j+=4){
+                newArr.push(imgData.data[j]);
+                newArr.push(imgData.data[j+1]);
+                newArr.push(imgData.data[j+2]);
+            }
         }
 
+        globalObj.nc = verifyColorSpace;
+        
+
         let uint = new Uint8Array(newArr);
-        console.log(uint)
+        
         globalObj.arr = uint;
 
       }
@@ -173,4 +191,26 @@ function setValueFromModal(){
     let input = document.getElementById("modalInput").value;
     globalObj.nc = parseInt(input);
     closeModal();
+}
+
+function detectColorSpace(arr){
+    let target = parseInt(arr.length/4);
+    
+    let counter = 0;
+    
+    for(let j = 0; j < arr.length; j+=4){
+        let r = arr[j];
+        let g = arr[j+1];
+        let b = arr[j+2];
+        
+        if(r == g && r == b){
+            counter++;
+        }
+    }
+    
+    if(target == counter){
+        return 1;
+    }else{
+        return 3;
+    }
 }
