@@ -29,82 +29,15 @@ function handleImage(e){
 
     let extJpg = nameWithExt.substr(nameWithExt.lastIndexOf('.'));
 
-    if(extJpg != '.jpg' && extJpg != '.jpeg' && extJpg != '.JPG' && extJpg != '.JPEG'){
-        console.log("The image is not a .jpg/.jpeg format!");
-        return;
-    }
-  EXIF.getData(e.target.files[0], function() {
-    var allMetaData = EXIF.getAllTags(this);
-  
-    var dpi1 = parseFloat(EXIF.getTag(this, "XResolution"));
-
-    if(isNaN(dpi1) || dpi1 == null){
-        globalObj.dpi = 72
+    if(extJpg == '.jpg' || extJpg == '.jpeg' || extJpg == '.JPG' || extJpg == '.JPEG'){
+        useJpeg(e);
+    }else if(extJpg == '.png' || extJpg == '.PNG'){
+        globalObj.dpi = 72;
+        readImage(e)
     }else{
-        globalObj.dpi = dpi1;
+        console.log("Invalid image format!");
     }
 
-    var nc1 = EXIF.getTag(this, "ComponentsConfiguration")
-
-    if(isNaN(nc1) || nc1 == null){
-        var nc2 = parseFloat(EXIF.getTag(this, "SamplesPerPixel"));
-        if(isNaN(nc2) || nc2 == null){
-            // openModal();
-        }else{
-            globalObj.nc = nc2;
-        }
-    }else{
-        globalObj.nc = nc1;
-    }
-
-    reader.onload = function(event){
-      var img = new Image();
-      img.onload = function(){
-
-        canvas.width = 100;
-        canvas.height = 100;
-
-        hideCanvas.width = img.width;
-        hideCanvas.height = img.height;
-
-        globalObj.w = img.width;
-        globalObj.h = img.height;
-
-        ctxHide.drawImage(img, 0, 0);
-
-        ctx.drawImage(img, 0, 0, img.width, img.height,     // source rectangle
-                      0, 0, canvas.width, canvas.height); // destination rectangle
-
-        var imgData = ctxHide.getImageData(0,0,hideCanvas.width, hideCanvas.height);
-
-        let newArr = [];
-
-        let verifyColorSpace = detectColorSpace(imgData.data);
-        
-        if(verifyColorSpace == 1){
-            for(let j = 0; j < imgData.data.length; j+=4){
-                newArr.push(imgData.data[j]);
-            }
-        }else if(verifyColorSpace == 3){
-            for(let j = 0; j < imgData.data.length; j+=4){
-                newArr.push(imgData.data[j]);
-                newArr.push(imgData.data[j+1]);
-                newArr.push(imgData.data[j+2]);
-            }
-        }
-
-        globalObj.nc = verifyColorSpace;
-        
-
-        let uint = new Uint8Array(newArr);
-        
-        globalObj.arr = uint;
-
-      }
-      img.src = event.target.result;
-    }
-    reader.readAsDataURL(e.target.files[0]);
-  });
 
   document.getElementById("generateBt").style.borderColor = "rgb(0, 200, 0)";
   document.getElementById("generateBt").disabled = false;
@@ -213,4 +146,84 @@ function detectColorSpace(arr){
     }else{
         return 3;
     }
+}
+
+function useJpeg(e){
+
+    EXIF.getData(e.target.files[0], function() {
+        var dpi1 = parseFloat(EXIF.getTag(this, "XResolution"));
+    
+        if(isNaN(dpi1) || dpi1 == null){
+            globalObj.dpi = 72
+        }else{
+            globalObj.dpi = dpi1;
+        }
+    
+        var nc1 = EXIF.getTag(this, "ComponentsConfiguration")
+    
+        if(isNaN(nc1) || nc1 == null){
+            var nc2 = parseFloat(EXIF.getTag(this, "SamplesPerPixel"));
+            if(isNaN(nc2) || nc2 == null){
+                // openModal();
+            }else{
+                globalObj.nc = nc2;
+            }
+        }else{
+            globalObj.nc = nc1;
+        }
+    
+        readImage(e);
+      });
+
+}
+
+function readImage(e){
+    reader.onload = function(event){
+ 
+        var img = new Image();
+        img.onload = function(){
+  
+          canvas.width = 100;
+          canvas.height = 100;
+  
+          hideCanvas.width = img.width;
+          hideCanvas.height = img.height;
+  
+          globalObj.w = img.width;
+          globalObj.h = img.height;
+  
+          ctxHide.drawImage(img, 0, 0);
+  
+          ctx.drawImage(img, 0, 0, img.width, img.height,     // source rectangle
+                        0, 0, canvas.width, canvas.height); // destination rectangle
+  
+          var imgData = ctxHide.getImageData(0,0,hideCanvas.width, hideCanvas.height);
+  
+          let newArr = [];
+  
+          let verifyColorSpace = detectColorSpace(imgData.data);
+          
+          if(verifyColorSpace == 1){
+              for(let j = 0; j < imgData.data.length; j+=4){
+                  newArr.push(imgData.data[j]);
+              }
+          }else if(verifyColorSpace == 3){
+              for(let j = 0; j < imgData.data.length; j+=4){
+                  newArr.push(imgData.data[j]);
+                  newArr.push(imgData.data[j+1]);
+                  newArr.push(imgData.data[j+2]);
+              }
+          }
+  
+          globalObj.nc = verifyColorSpace;
+         console.log(verifyColorSpace)
+  
+          let uint = new Uint8Array(newArr);
+          
+          globalObj.arr = uint;
+  
+        }
+        img.src = event.target.result;
+      }
+    reader.readAsDataURL(e.target.files[0]);
 }

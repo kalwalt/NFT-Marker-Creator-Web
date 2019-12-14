@@ -9,7 +9,7 @@ Advanced options coming soon.
 
 ### Instructions
 
-    1. Upload any JPG image.
+    1. Upload any JPG/PNG image.
     2. If the Number of Channels is missing, it will as for it.
     3. Click the generate button.
     4. The files will be automatically downloaded when the generation finishes.
